@@ -1,0 +1,51 @@
+WITH first_visits AS (
+    SELECT DISTINCT 
+        user_pseudo_id AS user,
+        DATE_TRUNC(PARSE_DATE('%Y%m%d', MIN(event_date)), WEEK) AS event_week
+    FROM 
+        `turing_data_analytics.raw_events`
+    GROUP BY 1
+),
+
+users AS (
+    SELECT event_week, 
+           COUNT(*) AS users
+    FROM first_visits
+    GROUP BY 1
+),
+
+purchases AS (
+    SELECT
+        user_pseudo_id,
+        DATE_TRUNC(PARSE_DATE('%Y%m%d', event_date), WEEK) AS event_week,
+        event_value_in_usd AS revenue
+    FROM 
+        `turing_data_analytics.raw_events`
+    WHERE event_value_in_usd > 0
+)
+
+SELECT 
+    fv.event_week,
+    SUM((CASE WHEN fv.event_week = p.event_week THEN p.revenue ELSE 0 END) / u.users) AS week0,
+    SUM((CASE WHEN DATE_ADD(fv.event_week, INTERVAL 1 week) = p.event_week THEN p.revenue ELSE 0 END) / u.users) AS week1,
+    SUM((CASE WHEN DATE_ADD(fv.event_week, INTERVAL 2 week) = p.event_week THEN p.revenue ELSE 0 END) / u.users) AS week2,
+    SUM((CASE WHEN DATE_ADD(fv.event_week, INTERVAL 3 week) = p.event_week THEN p.revenue ELSE 0 END) / u.users) AS week3,
+    SUM((CASE WHEN DATE_ADD(fv.event_week, INTERVAL 4 week) = p.event_week THEN p.revenue ELSE 0 END) / u.users) AS week4,
+    SUM((CASE WHEN DATE_ADD(fv.event_week, INTERVAL 5 week) = p.event_week THEN p.revenue ELSE 0 END) / u.users) AS week5,
+    SUM((CASE WHEN DATE_ADD(fv.event_week, INTERVAL 6 week) = p.event_week THEN p.revenue ELSE 0 END) / u.users) AS week6,
+    SUM((CASE WHEN DATE_ADD(fv.event_week, INTERVAL 7 week) = p.event_week THEN p.revenue ELSE 0 END) / u.users) AS week7,
+    SUM((CASE WHEN DATE_ADD(fv.event_week, INTERVAL 8 week) = p.event_week THEN p.revenue ELSE 0 END) / u.users) AS week8,
+    SUM((CASE WHEN DATE_ADD(fv.event_week, INTERVAL 9 week) = p.event_week THEN p.revenue ELSE 0 END) / u.users) AS week9,
+    SUM((CASE WHEN DATE_ADD(fv.event_week, INTERVAL 10 week) = p.event_week THEN p.revenue ELSE 0 END) / u.users) AS week10,
+    SUM((CASE WHEN DATE_ADD(fv.event_week, INTERVAL 11 week) = p.event_week THEN p.revenue ELSE 0 END) / u.users) AS week11,
+    SUM((CASE WHEN DATE_ADD(fv.event_week, INTERVAL 12 week) = p.event_week THEN p.revenue ELSE 0 END) / u.users) AS week12
+FROM 
+    first_visits fv
+FULL OUTER JOIN 
+    purchases p ON fv.user = p.user_pseudo_id
+JOIN users u ON fv.event_week = u.event_week
+GROUP BY 
+    fv.event_week
+HAVING fv.event_week < '2021-01-31'
+ORDER BY 
+    fv.event_week
